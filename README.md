@@ -14,4 +14,4 @@ This game is just a bit of a fun project.
 
 ## Cleaning Up Directory
 
-	$ make dist-clean
+	$ make clean

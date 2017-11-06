@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ncurses.h>
 #include <unistd.h>
+#include <curses.h>
 
 #define DELAY = 2000;
 
