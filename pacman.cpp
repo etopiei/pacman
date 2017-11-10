@@ -1,10 +1,10 @@
 #include "pacman.h"
 
 Pacman::Pacman() {
-	direction = 1;
-	nextDirection = 1;
-	x = 3;
-	y = 4; 
+	direction = 3;
+	nextDirection = 3;
+	x = 7;
+	y = 8; 
 }
 
 void Pacman::changeCoordinates(int xChange, int yChange) {
