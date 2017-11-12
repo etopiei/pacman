@@ -9,6 +9,11 @@ Pacman::Pacman() {
 
 void Pacman::changeCoordinates(int xChange, int yChange) {
 	x = x + xChange;
+	if(x == -1) {
+		x = 16;
+	} else if (x == 16) {
+		x = -1;
+	}
 	y = y + yChange;
 }
 

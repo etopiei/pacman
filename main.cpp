@@ -105,7 +105,7 @@ bool checkForWall(int x, int y) {
 }
 
 bool validBoard(int x, int y) {
-	return (x >= 0 && y >= 0 && x < 16 && y < 11);
+	return (x >= 0 && y >= 0 && x < 16 && y < 11) || (y==5);
 }
 
 bool validNextDirection(int nextDirection, int x, int y) {
@@ -128,7 +128,7 @@ bool validNextDirection(int nextDirection, int x, int y) {
 			yChange = 0;
 			break; 
 	}
-	return (validBoard(x + xChange, y + yChange) && checkForWall(x + xChange, y + yChange));
+	return (validBoard(x + xChange, y + yChange) && !checkForWall(x + xChange, y + yChange));
 }
 
 void updatePacman(Pacman *player) {
@@ -140,8 +140,9 @@ void updatePacman(Pacman *player) {
 	int y = player->getY();
 
 	//if it is valid switch direction
-	if(direction != nextDirection) {
+	if(direction != nextDirection && validNextDirection(nextDirection, x, y)) {
 		player->changeDirection();		
+		direction = player->getDirection();
 	}
 
 	int xChange = 0;
@@ -180,8 +181,15 @@ void updatePacman(Pacman *player) {
 		position oldPosition = convertBoardPosition(x, y);
 		mvprintw(oldPosition.y, oldPosition.x, " ");
 
+		position pacmanPosition;
 		//print pacman in a position on the board.
-		position pacmanPosition = convertBoardPosition(x+xChange, y+yChange);
+		if(x+xChange == -1) {
+			pacmanPosition = convertBoardPosition(16, y+yChange);
+		} else if(x+xChange == 16) {
+			pacmanPosition = convertBoardPosition(-1, y+yChange);
+		} else {
+			pacmanPosition = convertBoardPosition(x+xChange, y+yChange);
+		}
 		attron(COLOR_PAIR(6)); 
 		mvaddch(pacmanPosition.y, pacmanPosition.x, pacmanCharacter);
 		refresh();
@@ -239,7 +247,7 @@ int main() {
 		if(userInput > 0) {
 			playing = checkForChangeMovement(userInput, &player);
 		}
-		if(step%7500 == 0) {
+		if(step%9000 == 0) {
 			updatePacman(&player);		
 		}
 		sleep(0.1);
