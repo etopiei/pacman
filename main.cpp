@@ -4,6 +4,8 @@
 #include <fstream>
 #include <curses.h>
 #include <vector>
+
+#include "ghost.h"
 #include "pacman.h"
 
 #define DELAY = 2000;
@@ -24,7 +26,7 @@ position convertBoardPosition(int x, int y) {
 	return boardPosition;
 }
 
-void setupMaze() {
+void setupMaze(std::vector<Ghost*> ghosts) {
 	attron(COLOR_PAIR(6));
 	mvprintw(0, 1, "Pacman - Press 'q' to quit");
 	attron(COLOR_PAIR(1));
@@ -91,7 +93,16 @@ void setupMaze() {
 			break;		
 		}
 	}
-	
+
+	//now add ghosts
+	for(int i = 0; i < ghosts.size(); i++) {
+		attron(COLOR_PAIR(i+2));
+		int ghostX = ghosts[i]->getGhostX();
+		int ghostY = ghosts[i]->getGhostY();
+		position ghostPosition = convertBoardPosition(ghostX, ghostY);
+		mvprintw(ghostPosition.y, ghostPosition.x, "G");
+	}
+		
 	refresh();
 }
 
@@ -240,7 +251,14 @@ int main() {
 	
 	bool playing = true;
 	Pacman player = Pacman();
-	setupMaze();
+	Ghost ghost1 = Ghost(1);
+	Ghost ghost2 = Ghost(2);
+	Ghost ghost3 = Ghost(3);
+	std::vector<Ghost*> ghosts;
+	ghosts.push_back(&ghost1);
+	ghosts.push_back(&ghost2);
+	ghosts.push_back(&ghost3);
+	setupMaze(ghosts);
 	int step = 0;
 	while(playing) {
 		int userInput = getch();
