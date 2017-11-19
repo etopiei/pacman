@@ -26,7 +26,7 @@ position convertBoardPosition(int x, int y) {
 	return boardPosition;
 }
 
-void setupMaze(std::vector<Ghost*> ghosts) {
+std::vector<std::vector<bool> > setupMaze(std::vector<Ghost*> ghosts) {
 	attron(COLOR_PAIR(6));
 	mvprintw(0, 1, "Pacman - Press 'q' to quit");
 	attron(COLOR_PAIR(1));
@@ -55,12 +55,13 @@ void setupMaze(std::vector<Ghost*> ghosts) {
 	mvprintw(13, 3*17, " ");
 	mvprintw(13, 3*17+1, " ");
 
-	attron(COLOR_PAIR(2));
-
-	for(int i = 2; i < 13; i++) {
-		for(int j = 4; j < 3*17; j+=3) {
-			mvaddch(i, j, ACS_BULLET);		
+	std::vector<std::vector<bool> > board;
+	for(int i = 0; i < 11; i++) {
+		std::vector<bool> dotRow;
+		for(int j = 0; j < 16; j++) {
+			dotRow.push_back(true);
 		}
+		board.push_back(dotRow);
 	}
 
 	//read in walls here
@@ -83,6 +84,7 @@ void setupMaze(std::vector<Ghost*> ghosts) {
 			std::vector<int>().swap(currentWall);		
 		}
 		currentWall.push_back(wallX);
+		board[wallY][wallX] = false;
 		//first translate the board coordinate to a screen coordinate
 		position wallBlock = convertBoardPosition(wallX, wallY);
 		mvprintw(wallBlock.y, wallBlock.x, " ");
@@ -91,6 +93,28 @@ void setupMaze(std::vector<Ghost*> ghosts) {
 		if(wallX == 12 && wallY == 10) {
 			walls.push_back(currentWall);
 			break;		
+		}
+	}
+
+	
+	
+	board[4][6] = false;
+	board[4][7] = false;
+	board[4][8] = false;
+	board[4][9] = false;
+	board[3][6] = false;
+	board[3][7] = false;
+	board[3][8] = false;
+	board[3][9] = false;	
+
+	//now write dots to screen
+	attron(COLOR_PAIR(2));
+	for(int i = 0; i < board.size(); i++) {
+		for(int j = 0; j < board[i].size(); j++) {
+			if(board[i][j]) {
+				position dotPosition = convertBoardPosition(j, i);
+				mvaddch(dotPosition.y, dotPosition.x, ACS_BULLET);	
+			}
 		}
 	}
 
@@ -104,6 +128,7 @@ void setupMaze(std::vector<Ghost*> ghosts) {
 	}
 		
 	refresh();
+	return board;
 }
 
 bool checkForWall(int x, int y) {
@@ -142,7 +167,16 @@ bool validNextDirection(int nextDirection, int x, int y) {
 	return (validBoard(x + xChange, y + yChange) && !checkForWall(x + xChange, y + yChange));
 }
 
-void updatePacman(Pacman *player) {
+void moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::vector<bool> > *board) {
+	//loop through all ghosts and try and move in their current direction
+
+	//if there current direction is not valid then try another direction (not opposite to current direction though
+	
+	//update ghost direction and write to the board, make old square equal to what it was before ghost
+	//also check for if pacman and ghost are on the same square now.
+}
+
+void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
 
 	int pacmanCharacter = 0;
 	int direction = player->getDirection();
@@ -226,7 +260,6 @@ bool checkForChangeMovement(int userInput, Pacman *player) {
 				xChange = 1;
 				break; 		
 		}
-		//if one of the next two spaces would make the direction switch legal then queue up the next direction
 		player->setDirection(userInput-257);			
 	}
 	return true;
@@ -258,7 +291,7 @@ int main() {
 	ghosts.push_back(&ghost1);
 	ghosts.push_back(&ghost2);
 	ghosts.push_back(&ghost3);
-	setupMaze(ghosts);
+	std::vector<std::vector<bool> > board = setupMaze(ghosts);
 	int step = 0;
 	while(playing) {
 		int userInput = getch();
@@ -266,7 +299,8 @@ int main() {
 			playing = checkForChangeMovement(userInput, &player);
 		}
 		if(step%9000 == 0) {
-			updatePacman(&player);		
+			updatePacman(&player, &board);
+			moveGhosts(&ghosts, &player, &board);		
 		}
 		sleep(0.1);
 		step++;
