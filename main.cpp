@@ -4,6 +4,8 @@
 #include <fstream>
 #include <curses.h>
 #include <vector>
+#include <time.h>
+#include <stdlib.h>
 
 #include "ghost.h"
 #include "pacman.h"
@@ -109,8 +111,8 @@ std::vector<std::vector<bool> > setupMaze(std::vector<Ghost*> ghosts) {
 
 	//now write dots to screen
 	attron(COLOR_PAIR(2));
-	for(int i = 0; i < board.size(); i++) {
-		for(int j = 0; j < board[i].size(); j++) {
+	for(unsigned int i = 0; i < board.size(); i++) {
+		for(unsigned int j = 0; j < board[i].size(); j++) {
 			if(board[i][j]) {
 				position dotPosition = convertBoardPosition(j, i);
 				mvaddch(dotPosition.y, dotPosition.x, ACS_BULLET);	
@@ -119,7 +121,7 @@ std::vector<std::vector<bool> > setupMaze(std::vector<Ghost*> ghosts) {
 	}
 
 	//now add ghosts
-	for(int i = 0; i < ghosts.size(); i++) {
+	for(unsigned int i = 0; i < ghosts.size(); i++) {
 		attron(COLOR_PAIR(i+2));
 		int ghostX = ghosts[i]->getGhostX();
 		int ghostY = ghosts[i]->getGhostY();
@@ -201,33 +203,50 @@ void writeOldGhostPosition(int x, int y, std::vector<std::vector<bool> > *board)
 	}	
 }
 
-void moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::vector<bool> > *board) {
-	//loop through all ghosts and try and move in their current direction
-	for(int i = 0; i < ghosts->size(); i++) {
-		//if there current direction is not valid then try another direction (not opposite to current direction though)
+bool moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::vector<bool> > *board) {
+    int pacmanX = player->getX();
+    int pacmanY = player->getY();
+    bool gameOver = false;
+	//loop through all ghosts and pick a direction to move in.
+	for(unsigned int i = 0; i < ghosts->size(); i++) {
+
 		int direction = (*ghosts)[i]->getGhostDirection();
 		int x = (*ghosts)[i]->getGhostX();
 		int y = (*ghosts)[i]->getGhostY();
         int nextDirection = direction;
         int changeInX = 0;
-        int changeInY = 0;	
-	
-		if(!validGhostDirection(direction, x, y)) {
-		    //find a valid direction, by trying possibilties
-            if(direction == 3 || direction == 4) {
-                if(validGhostDirection(1, x, y)) {
-                    nextDirection = 1;
-                } else if(validGhostDirection(2, x, y)) {
-                    nextDirection = 2;
-                } 
-            } else {
-                if(validGhostDirection(3, x, y)) {
-                    nextDirection = 3;
-                } else if(validGhostDirection(4, x, y)) {
-                    nextDirection = 4;
-                }
-            }   
-		}
+        int changeInY = 0;
+
+        unsigned int notAllowed = 1;
+
+        switch(direction) {
+            case 1:
+                notAllowed = 2;
+                break;
+            case 2:
+                notAllowed = 1;
+                break;
+            case 3:
+                notAllowed = 4;
+                break;
+            case 4:
+                notAllowed = 3;
+                break;
+        }	
+
+        std::vector<int> possible;
+        for(unsigned int j = 1; j < 5; j++) {
+            if(j != notAllowed && validGhostDirection(j, x, y)) {
+                possible.push_back(j);
+            }
+        }
+
+        if(possible.size() == 0) {
+            //ghost has nowhere to go, allow them to turn around (maybe should redesign board)
+            nextDirection = notAllowed;
+        } else {
+            nextDirection = possible[rand()%possible.size()];
+        }
 
         switch(nextDirection) {
             case 1:
@@ -250,10 +269,15 @@ void moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::ve
         (*ghosts)[i]->changeGhostDirection(nextDirection);
         position ghostPosition = convertBoardPosition(x+changeInX, y+changeInY);
         mvprintw(ghostPosition.y, ghostPosition.x, "G");
+
+        if(x+changeInX == pacmanX && y+changeInY == pacmanY) {
+            gameOver = true;
+        }
 	
 	}
 
     refresh();	
+    return gameOver;
 }
 
 void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
@@ -265,8 +289,9 @@ void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
 	int y = player->getY();
 
 	//update board so current position no longer has dot
-	(*board)[y][x] = false;
-
+    if(x > 0 && x < 16) {
+    	(*board)[y][x] = false;
+    }
 	//if it is valid switch direction
 	if(direction != nextDirection && validNextDirection(nextDirection, x, y)) {
 		player->changeDirection();		
@@ -328,21 +353,6 @@ bool checkForChangeMovement(int userInput, Pacman *player) {
 	if(userInput == 'q') {
 		return false;		
 	} else if(userInput > 257 && userInput < 262) {
-		int xChange = 0, yChange = 0;
-		switch(userInput-257) {
-			case 1:
-				yChange = 1;  
-				break;
-			case 2:
-				yChange = -1;
-				break;
-			case 3:
-				xChange = -1;
-				break;
-			case 4:
-				xChange = 1;
-				break; 		
-		}
 		player->setDirection(userInput-257);			
 	}
 	return true;
@@ -351,6 +361,7 @@ bool checkForChangeMovement(int userInput, Pacman *player) {
 int main() {
 
 	initscr();
+    srand(time(NULL));
 	
 	start_color();
 	init_pair(1, COLOR_BLACK, COLOR_BLUE);
@@ -368,12 +379,12 @@ int main() {
 	bool playing = true;
 	Pacman player = Pacman();
 	Ghost ghost1 = Ghost(1);
-//	Ghost ghost2 = Ghost(2);
-//	Ghost ghost3 = Ghost(3);
+    Ghost ghost2 = Ghost(2);
+	Ghost ghost3 = Ghost(3);
 	std::vector<Ghost*> ghosts;
 	ghosts.push_back(&ghost1);
-//	ghosts.push_back(&ghost2);
-//	ghosts.push_back(&ghost3);
+	ghosts.push_back(&ghost2);
+	ghosts.push_back(&ghost3);
 	std::vector<std::vector<bool> > board = setupMaze(ghosts);
 	int step = 0;
 	while(playing) {
@@ -383,7 +394,7 @@ int main() {
 		}
 		if(step%9000 == 0) {
 			updatePacman(&player, &board);
-			moveGhosts(&ghosts, &player, &board);		
+			playing = !moveGhosts(&ghosts, &player, &board);		
 		}
 		sleep(0.1);
 		step++;

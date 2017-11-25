@@ -1,13 +1,14 @@
 LDFLAGS=-lncurses
+WARN=-Wall -Wextra
 
 all: pacman.o ghost.o
-	g++ -o main pacman.o ghost.o main.cpp $(LDFLAGS)
+	g++ -o main pacman.o ghost.o main.cpp $(LDFLAGS) $(WARN)
 
 pacman.o:
-	g++ -c pacman.cpp -Wall -Wextra
+	g++ -c pacman.cpp $(WARN)
 
 ghost.o:
-	g++ -c ghost.cpp -Wall -Wextra
+	g++ -c ghost.cpp $(WARN)
 
 run: all
 	./main
