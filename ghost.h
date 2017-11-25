@@ -6,6 +6,7 @@ class Ghost {
 		int getGhostY();
 		int getGhostDirection();
 		void changeGhostDirection(int newDirection);
+        void changePosition(int changeX, int changeY);
 		
 
 	private:

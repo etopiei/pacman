@@ -144,6 +144,30 @@ bool validBoard(int x, int y) {
 	return (x >= 0 && y >= 0 && x < 16 && y < 11) || (y==5);
 }
 
+bool validGhostBoard(int x, int y) {
+	return (x >= 0 && y >= 0 && x < 16 && y < 11);
+}
+
+bool validGhostDirection(int nextDirection, int x, int y) {
+	int xChange = 0;
+    int yChange = 0;
+ 	switch (nextDirection) {
+ 		case 1:
+ 			yChange = 1;
+ 			break;
+ 		case 2:
+ 			yChange = -1;
+ 			break;
+ 		case 3:
+ 			xChange = -1;
+ 			break;
+ 		case 4:
+ 			xChange = 1;
+ 			break; 
+ 	}
+ 	return (validGhostBoard(x + xChange, y + yChange) && !checkForWall(x + xChange, y + yChange)); 
+}
+
 bool validNextDirection(int nextDirection, int x, int y) {
 	int xChange, yChange;
 	switch (nextDirection) {
@@ -167,13 +191,69 @@ bool validNextDirection(int nextDirection, int x, int y) {
 	return (validBoard(x + xChange, y + yChange) && !checkForWall(x + xChange, y + yChange));
 }
 
+void writeOldGhostPosition(int x, int y, std::vector<std::vector<bool> > *board) {
+	attron(COLOR_PAIR(2));
+	position dotPosition = convertBoardPosition(x, y);
+	if((*board)[y][x]) {
+		mvaddch(dotPosition.y, dotPosition.x, ACS_BULLET);
+	} else {
+		mvaddch(dotPosition.y, dotPosition.x, ' ');	
+	}	
+}
+
 void moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::vector<bool> > *board) {
 	//loop through all ghosts and try and move in their current direction
-
-	//if there current direction is not valid then try another direction (not opposite to current direction though
+	for(int i = 0; i < ghosts->size(); i++) {
+		//if there current direction is not valid then try another direction (not opposite to current direction though)
+		int direction = (*ghosts)[i]->getGhostDirection();
+		int x = (*ghosts)[i]->getGhostX();
+		int y = (*ghosts)[i]->getGhostY();
+        int nextDirection = direction;
+        int changeInX = 0;
+        int changeInY = 0;	
 	
-	//update ghost direction and write to the board, make old square equal to what it was before ghost
-	//also check for if pacman and ghost are on the same square now.
+		if(!validGhostDirection(direction, x, y)) {
+		    //find a valid direction, by trying possibilties
+            if(direction == 3 || direction == 4) {
+                if(validGhostDirection(1, x, y)) {
+                    nextDirection = 1;
+                } else if(validGhostDirection(2, x, y)) {
+                    nextDirection = 2;
+                } 
+            } else {
+                if(validGhostDirection(3, x, y)) {
+                    nextDirection = 3;
+                } else if(validGhostDirection(4, x, y)) {
+                    nextDirection = 4;
+                }
+            }   
+		}
+
+        switch(nextDirection) {
+            case 1:
+                changeInY = 1;
+                break;
+            case 2:
+                changeInY = -1;
+                break;
+            case 3:
+                changeInX = -1;
+                break;
+            case 4:
+                changeInX = 1;
+                break;
+        }
+
+        attron(COLOR_PAIR(i+3));
+        writeOldGhostPosition(x, y, board);
+        (*ghosts)[i]->changePosition(changeInX, changeInY);
+        (*ghosts)[i]->changeGhostDirection(nextDirection);
+        position ghostPosition = convertBoardPosition(x+changeInX, y+changeInY);
+        mvprintw(ghostPosition.y, ghostPosition.x, "G");
+	
+	}
+
+    refresh();	
 }
 
 void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
@@ -183,6 +263,9 @@ void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
 	int nextDirection = player->getNextDirection();
 	int x = player->getX();
 	int y = player->getY();
+
+	//update board so current position no longer has dot
+	(*board)[y][x] = false;
 
 	//if it is valid switch direction
 	if(direction != nextDirection && validNextDirection(nextDirection, x, y)) {
@@ -285,12 +368,12 @@ int main() {
 	bool playing = true;
 	Pacman player = Pacman();
 	Ghost ghost1 = Ghost(1);
-	Ghost ghost2 = Ghost(2);
-	Ghost ghost3 = Ghost(3);
+//	Ghost ghost2 = Ghost(2);
+//	Ghost ghost3 = Ghost(3);
 	std::vector<Ghost*> ghosts;
 	ghosts.push_back(&ghost1);
-	ghosts.push_back(&ghost2);
-	ghosts.push_back(&ghost3);
+//	ghosts.push_back(&ghost2);
+//	ghosts.push_back(&ghost3);
 	std::vector<std::vector<bool> > board = setupMaze(ghosts);
 	int step = 0;
 	while(playing) {

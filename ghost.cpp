@@ -3,7 +3,7 @@
 Ghost::Ghost(int type) {
 	y = 4;
 	x = 5+type;
-	direction = 1;
+	direction = 4;
 	if(type != 1) {
 		active = false;
 	} else {
@@ -27,4 +27,7 @@ void Ghost::changeGhostDirection(int newDirection) {
 	direction = newDirection;
 }
 
-
+void Ghost::changePosition(int changeX, int changeY) {
+    x = x + changeX;
+    y = y + changeY;
+}
