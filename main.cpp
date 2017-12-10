@@ -396,7 +396,7 @@ int main() {
 			updatePacman(&player, &board);
 			playing = !moveGhosts(&ghosts, &player, &board);		
 		}
-		sleep(0.1);
+		usleep(20);
 		step++;
 	}
 
