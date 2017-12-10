@@ -11,6 +11,7 @@
 #include "pacman.h"
 
 #define DELAY = 2000;
+int score = 0;
 
 std::vector<std::vector<int> > walls;
 
@@ -18,6 +19,10 @@ struct position {
 	int x;
 	int y; 
 };
+
+void addToScore() {
+		score = score + 10;
+}
 
 position convertBoardPosition(int x, int y) {
 	int boardY = y + 2;
@@ -30,7 +35,9 @@ position convertBoardPosition(int x, int y) {
 
 std::vector<std::vector<bool> > setupMaze(std::vector<Ghost*> ghosts) {
 	attron(COLOR_PAIR(6));
-	mvprintw(0, 1, "Pacman - Press 'q' to quit");
+	std::string gameString = "Pacman - Press 'q' to quit\tScore: ";
+	gameString += std::to_string(score);
+	mvprintw(0, 1, gameString.c_str());
 	attron(COLOR_PAIR(1));
 	for(int i = 2; i < 13; i++) {
 		if(i != 7) {
@@ -271,7 +278,12 @@ bool moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::ve
         mvprintw(ghostPosition.y, ghostPosition.x, "G");
 
         if(x+changeInX == pacmanX && y+changeInY == pacmanY) {
-            gameOver = true;
+				//here let pacman lose a life, or die.
+			if(player->removeLife() == 0) {
+            	gameOver = true;
+			} else {
+				//reset();
+			}
         }
 	
 	}
@@ -282,6 +294,12 @@ bool moveGhosts(std::vector<Ghost*> *ghosts, Pacman* player, std::vector<std::ve
 
 void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
 
+	//update score
+	attron(COLOR_PAIR(6));
+	std::string gameString = "Pacman - Press 'q' to quit\tScore: ";
+	gameString += std::to_string(score);
+	mvprintw(0, 1, gameString.c_str());
+
 	int pacmanCharacter = 0;
 	int direction = player->getDirection();
 	int nextDirection = player->getNextDirection();
@@ -290,7 +308,10 @@ void updatePacman(Pacman *player, std::vector<std::vector<bool> > *board) {
 
 	//update board so current position no longer has dot
     if(x > 0 && x < 16) {
-    	(*board)[y][x] = false;
+		if((*board)[y][x]) {
+    		(*board)[y][x] = false;
+			addToScore();
+		}
     }
 	//if it is valid switch direction
 	if(direction != nextDirection && validNextDirection(nextDirection, x, y)) {

@@ -5,6 +5,7 @@ Pacman::Pacman() {
 	nextDirection = 3;
 	x = 7;
 	y = 8; 
+	lives = 3;
 }
 
 void Pacman::changeCoordinates(int xChange, int yChange) {
@@ -15,6 +16,11 @@ void Pacman::changeCoordinates(int xChange, int yChange) {
 		x = -1;
 	}
 	y = y + yChange;
+}
+
+int Pacman::removeLife() {
+		lives = lives - 1;
+		return lives;
 }
 
 int Pacman::getNextDirection() {
